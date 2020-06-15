@@ -48,7 +48,9 @@ def close_db(error):
 # routes
 @app.route("/")
 def home():
-    db = get_db()
+    if 'username' not in session:
+        return redirect(url_for("login"))
+
     cursor = get_db_cursor()
     cursor.execute("SELECT * FROM questions Where status='answered'")
     questions = dictionarizeData(cursor.fetchall(), cursor.description)
@@ -64,8 +66,10 @@ def ask():
     
 @app.route("/login", methods=['GET','POST'])
 def login():
+    if 'username' in session:
+        return redirect(url_for("home"))
+
     if request.method == 'POST':
-        db = get_db()
         cursor = get_db_cursor()
         cursor.execute("SELECT * FROM users WHERE username=%s", (request.form.get("username"),))
         user = cursor.fetchone()
@@ -92,6 +96,9 @@ def question():
 
 @app.route("/register", methods=['POST','GET'])
 def register():
+    if 'username' in session:
+        return redirect(url_for("home"))
+
     if request.method == 'POST':
         db = get_db()
         cursor = get_db_cursor()
