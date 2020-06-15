@@ -2,9 +2,9 @@
 {% block title %}Question{% endblock %}
 {% block content %}
       <div class="jumbotron">
-        <h1>What?</h1>
-        <p>This is the answer.</p>
-        <p><a class="btn btn-primary btn-lg">Asked By: Herbert</a></p>
-        <p><a class="btn btn-primary btn-lg">Answered By: Anthony</a></p>
+        <h1>{{ question.question }}</h1>
+        <p>{{ question.answer }}</p>
+        <p><a class="btn btn-primary btn-lg">Asked By: {{ question.asker }}</a></p>
+        <p><a class="btn btn-primary btn-lg">Answered By: {{ question.asked }}</a></p>
       </div>
 {% endblock %}

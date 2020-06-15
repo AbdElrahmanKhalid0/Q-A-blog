@@ -4,7 +4,7 @@ from utils import get_db, get_db_cursor, dictionarizeData
 from datetime import datetime
 import os
 
-DATE_FORMAT = '%Y-%m-%d, %H:%M:%S'
+DATE_FORMAT = '%Y-%m-%d'
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 
@@ -94,9 +94,24 @@ def login():
 
     return render_template("login.html", title="Login")
 
-@app.route("/question")
-def question():
-    return render_template("question.html", title="Question")
+@app.route("/question/<int:id>")
+def question(id):
+    cursor = get_db_cursor()
+    cursor.execute("SELECT questions.body as question, answers.body as answer,\
+                    questions.asker_username as asker, questions.asked_username as asked,\
+                    questions.status as status FROM questions JOIN answers\
+                    ON questions.id = answers.question_id WHERE questions.id = %s",(id,))
+    question = cursor.fetchone()
+    if question:
+        question = dictionarizeData(question, cursor.description, True)
+        if question["status"] == "answered":
+            return render_template("question.html", title="Question", question=question)
+        else:
+            flash("This question hasn't been answerd yet, soon it will be!", "info")
+            return redirect(url_for("home"))
+    
+    flash("There is no question in here!!", "info")
+    return redirect(url_for("home"))
 
 @app.route("/register", methods=['POST','GET'])
 def register():
