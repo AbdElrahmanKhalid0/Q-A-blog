@@ -1,4 +1,4 @@
-from flask import Flask, render_template, g, request, redirect, flash, url_for, get_flashed_messages, session, abort
+from flask import Flask, render_template, g, request, redirect, flash, url_for, get_flashed_messages, session, abort, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from utils import get_db, get_db_cursor, dictionarizeData
 from datetime import datetime
@@ -22,7 +22,9 @@ def home():
         return redirect(url_for("login", next="home"))
 
     cursor = get_db_cursor()
-    cursor.execute("SELECT * FROM questions Where status='answered' ORDER BY ask_time DESC")
+    # in here ordered by the id instead of the date because the date won't be accurate
+    # in case that the day has many questions
+    cursor.execute("SELECT * FROM questions Where status='answered' ORDER BY id DESC")
     questions = dictionarizeData(cursor.fetchall(), cursor.description)
     return render_template("home.html", title="Home", questions=questions)
 
@@ -108,6 +110,7 @@ def login():
 
 @app.route("/question/<int:id>")
 def question(id):
+    # TODO: make the question show the comments from other users in its answered page
     if 'username' not in session:
         return redirect(url_for("login", next="question", id=id))
 
@@ -194,12 +197,25 @@ def answer_unanswered(id):
 
 
 
-@app.route("/users")
+@app.route("/users", methods=['GET','POST'])
 def users():
     if session['role'] != 'admin':
         abort(403)
 
-    return render_template("users.html", title="User Setup")
+    cursor = get_db_cursor()
+    if request.method == 'POST':
+        db = get_db()
+        username = request.json["username"]
+        role = request.json["role"]
+        cursor.execute("UPDATE users SET role=%s WHERE username=%s", (role, username))
+        db.commit()
+        
+        return jsonify({'success':'true'})
+
+    cursor.execute("SELECT * FROM users")    
+    users = dictionarizeData(cursor.fetchall(), cursor.description)
+
+    return render_template("users.html", title="User Setup", users=users)
 
 @app.route("/logout")
 def logout():

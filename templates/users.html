@@ -7,17 +7,50 @@
   </div>
   <div class="row">
     <div class="col-lg-12">
-      <div class="list-group">
-        <a href="#" class="list-group-item active">
-          <h4 class="list-group-item-heading">Admin</h4>
-        </a>
-        <a href="#" class="list-group-item">
-          <h4 class="list-group-item-heading">Herbert</h4>
-        </a>
-        <a href="#" class="list-group-item active">
-          <h4 class="list-group-item-heading">Anthony</h4>
-        </a>
+      <div class="list-group users">
+        {% for user in users %}
+          {% if user.role == 'admin' %}
+            <a class="list-group-item disabled" data-username="{{ user.username }}" data-role="{{ user.role }}">
+              <h4 class="list-group-item-heading">{{ user.username }}</h4>
+            </a>
+          {% elif user.role == 'expert' %}
+            <a href="#" class="list-group-item active" data-username="{{ user.username }}" data-role="{{ user.role }}">
+              <h4 class="list-group-item-heading">{{ user.username }}</h4>
+            </a>
+          {% else %}
+            <a href="#" class="list-group-item" data-username="{{ user.username }}" data-role="{{ user.role }}">
+              <h4 class="list-group-item-heading">{{ user.username }}</h4>
+            </a>
+          {% endif %}
+        {% endfor %}
       </div>
     </div><!-- /.col-lg-12 -->
   </div>
+{% endblock %}
+{% block additional_scripts %}
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const users = document.querySelectorAll('.users a');
+      for (user of users) {
+        if (!user.classList.contains("disabled")) {
+          user.addEventListener('click', function(){
+            const role = this.dataset.role == 'user' ? 'expert' : 'user';
+            fetch(`{{ url_for('users') }}`,{
+              method:'POST',
+              headers:{
+                'Content-Type':'application/json'
+              },
+              body:JSON.stringify({username: this.dataset.username, role})
+            })
+            this.dataset.role = role;
+            if (role == 'expert') {
+              this.classList.add("active");
+            } else {
+              this.classList.remove("active")
+            }
+          })
+        }
+      }
+    })
+  </script>
 {% endblock %}
