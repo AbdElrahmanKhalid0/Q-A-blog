@@ -22,12 +22,15 @@ def home():
         return redirect(url_for("login"))
 
     cursor = get_db_cursor()
-    cursor.execute("SELECT * FROM questions Where status='answered'")
+    cursor.execute("SELECT * FROM questions Where status='answered' ORDER BY ask_time DESC")
     questions = dictionarizeData(cursor.fetchall(), cursor.description)
     return render_template("home.html", title="Home", questions=questions)
 
 @app.route("/answer", methods=['GET','POST'])
 def answer():
+    if 'username' not in session:
+        return redirect(url_for("login"))
+
     if session['role'] != 'expert' and session['role'] != 'admin':
         abort(403)
 
@@ -48,6 +51,9 @@ def answer():
 
 @app.route("/ask", methods=['GET', 'POST'])
 def ask():
+    if 'username' not in session:
+        return redirect(url_for("login"))
+
     cursor = get_db_cursor()
     # TODO: make the expert not able to ask himself
     if request.method == 'POST':
@@ -96,6 +102,9 @@ def login():
 
 @app.route("/question/<int:id>")
 def question(id):
+    if 'username' not in session:
+        return redirect(url_for("login"))
+
     cursor = get_db_cursor()
     cursor.execute("SELECT questions.body as question, answers.body as answer,\
                     questions.asker_username as asker, questions.asked_username as asked,\
@@ -104,11 +113,7 @@ def question(id):
     question = cursor.fetchone()
     if question:
         question = dictionarizeData(question, cursor.description, True)
-        if question["status"] == "answered":
-            return render_template("question.html", title="Question", question=question)
-        else:
-            flash("This question hasn't been answerd yet, soon it will be!", "info")
-            return redirect(url_for("home"))
+        return render_template("question.html", title="Question", question=question)
     
     flash("There is no question in here!!", "info")
     return redirect(url_for("home"))
@@ -136,7 +141,52 @@ def register():
 
 @app.route("/unanswered")
 def unanswered():
-    return render_template("unanswered.html", title="Unanswered")
+    if 'username' not in session:
+        return redirect(url_for("login"))
+
+    cursor = get_db_cursor()
+    cursor.execute("SELECT * FROM questions Where status='not answered'")
+    questions = dictionarizeData(cursor.fetchall(), cursor.description)
+
+    return render_template("unanswered.html", title="Unanswered", questions=questions)
+
+@app.route("/unanswered/answer/<int:id>", methods=['GET','POST'])
+def answer_unanswered(id):
+    if 'username' not in session:
+        return redirect(url_for("login"))
+    
+    cursor = get_db_cursor()
+    cursor.execute("SELECT * FROM questions WHERE id=%s and status='not answered'", (id,))
+    question = cursor.fetchone()
+    if question:
+        question = dictionarizeData(question, cursor.description, True)
+    else:
+        flash("There is no an unanswered question with this id!", "info")
+        return redirect(url_for('unanswered'))
+
+    if request.method == 'POST':
+        db = get_db()
+        cursor.execute("INSERT INTO answers (body, question_id, answer_owner) VALUES (%s, %s, %s)",
+            (request.form.get("answer"), id, session["username"]))
+        # if the one who answered the question was the one who the question was led to its
+        # status will be changed to 'answered'
+        if question["asked_username"] == session["username"]:
+            cursor.execute("UPDATE questions SET status='answered' WHERE id=%s", (id,))
+            db.commit()
+            flash("Your answer was submitted successfully!", "success")
+            return redirect(url_for("unanswered"))
+        db.commit()
+        flash("Your answer has been submitted","success")
+        return redirect(url_for('answer_unanswered', id=id))
+    else:
+        cursor.execute("SELECT answer_owner, body as answer FROM answers WHERE question_id = %s", (id,))
+        answers = cursor.fetchall()
+        if answers:
+            answers = dictionarizeData(answers, cursor.description)
+        print(answers)
+        return render_template("answer_unanswered.html", question=question, answers=enumerate(answers) if answers else None)
+
+
 
 @app.route("/users")
 def users():

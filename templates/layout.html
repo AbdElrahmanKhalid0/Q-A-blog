@@ -26,6 +26,7 @@
             {% if 'username' in session%}
               <li class="{{'active' if title == 'Home'}}"><a href="{{ url_for('home') }}">Home</a></li>
               <li class="{{'active' if title == 'Ask Question'}}"><a href="{{ url_for('ask') }}">Ask Question</a></li>
+              <li class="{{'active' if title == 'Unanswered'}}"><a href="{{ url_for('unanswered') }}">Unanswered</a></li>
               {% if session["role"] == "expert" or session["role"] == "admin" %}
                 <li class="{{'active' if title == 'Answer Questions'}}"><a href="{{ url_for('answer') }}">Answer Questions</a></li>
                 {% if session["role"] == "admin" %}
