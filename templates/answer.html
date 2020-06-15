@@ -1,28 +1,39 @@
 {% extends "layout.html"%}
 {% block title %}Answer Question{% endblock %}
 {% block content %}
-  <div class="page-header">
-    <h1>What?</h1>
-  </div>
-  <div class="row">
-    <div class="col-lg-12">
-      <div class="well bs-component">
-        <form class="form-horizontal">
-          <fieldset>
-            <div class="form-group">
-              <label for="textArea" class="col-lg-2 control-label">Answer</label>
-              <div class="col-lg-10">
-                <textarea class="form-control" rows="3" id="textArea"></textarea>
-              </div>
+  <div class="questions">
+    {% if questions %}
+      <h1>You Have ({{ questions.__len__() }}) unanswered question/s</h1>
+    {% else %}
+      <h1>You Have answered all the questions! what a hero!!</h1>
+    {% endif %}
+    {% for quest in questions %}
+      <div class="question">
+        <div class="page-header">
+          <h2>{{ quest.body }}</h1>
+        </div>
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="well bs-component">
+              <form class="form-horizontal" method="POST" action="{{ url_for('answer', id=quest.id) }}">
+                <fieldset>
+                  <div class="form-group">
+                    <label for="textArea" class="col-lg-2 control-label">Answer</label>
+                    <div class="col-lg-10">
+                      <textarea class="form-control" rows="3" id="textArea" name="answer"></textarea>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="col-lg-10 col-lg-offset-2">
+                      <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                  </div>
+                </fieldset>
+              </form>
             </div>
-            <div class="form-group">
-              <div class="col-lg-10 col-lg-offset-2">
-                <button type="submit" class="btn btn-primary">Submit</button>
-              </div>
-            </div>
-          </fieldset>
-        </form>
+          </div>
+        </div>
       </div>
-    </div>
+    {% endfor %}
   </div>
 {% endblock %}

@@ -26,12 +26,25 @@ def home():
     questions = dictionarizeData(cursor.fetchall(), cursor.description)
     return render_template("home.html", title="Home", questions=questions)
 
-@app.route("/answer")
+@app.route("/answer", methods=['GET','POST'])
 def answer():
     if session['role'] != 'expert' and session['role'] != 'admin':
         abort(403)
 
-    return render_template("answer.html", title="Answer Questions")
+    cursor = get_db_cursor()
+    if request.method == 'POST':
+        db = get_db()
+        cursor.execute("INSERT INTO answers (body, question_id, answer_owner) VALUES (%s, %s, %s)",
+            (request.form.get("answer"), request.args.get("id"), session["username"]))
+        cursor.execute("UPDATE questions SET status='answered' WHERE id=%s", (request.args.get("id"),))
+        db.commit()
+        flash("Your answer was submitted successfully!", "success")
+        return redirect(url_for('answer'))
+        
+    cursor.execute("SELECT * FROM questions WHERE status='not answered' and asked_username=%s",(session["username"],))
+    questions = dictionarizeData(cursor.fetchall(), cursor.description)
+
+    return render_template("answer.html", title="Answer Questions", questions=questions)
 
 @app.route("/ask", methods=['GET', 'POST'])
 def ask():
