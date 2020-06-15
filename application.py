@@ -25,12 +25,14 @@ def get_db_cursor():
         db_connect()
     return g.mysql_cursor
 
-def dictionarizeData(rows, columnsData):
-    results = []
+def dictionarizeData(data, columnsData, oneRow=False):
     columns = tuple([column[0] for column in columnsData])
-    for row in rows:
-        results.append(dict(zip(columns, row)))
-    return results
+    if not oneRow:
+        results = []
+        for row in data:
+            results.append(dict(zip(columns, row)))
+        return results
+    return dict(zip(columns, data))
 
 
 app = Flask(__name__)
@@ -56,8 +58,27 @@ def answer():
 def ask():
     return render_template("ask.html", title="Ask Question")
     
-@app.route("/login")
+@app.route("/login", methods=['GET','POST'])
 def login():
+    if request.method == 'POST':
+        db = get_db()
+        cursor = get_db_cursor()
+        cursor.execute("SELECT * FROM users WHERE username=%s", (request.form.get("username"),))
+        user = cursor.fetchone()
+        if user:
+            user = dictionarizeData(user, cursor.description, True)
+            if check_password_hash(user["password"], request.form.get("password")):
+                flash("You have logged in successfully!", "success")
+                return redirect(url_for("home"))
+            else:
+                flash("You should check your input!!", "danger")
+                # in here I redirected the user to the same page to make the request method
+                # GET again instead of POST
+                return redirect(url_for("login"))
+        else:
+            flash("There is no user with this username, maybe you should register first!", "danger")
+            return redirect(url_for("login"))
+
     return render_template("login.html", title="Login")
 
 @app.route("/question")
