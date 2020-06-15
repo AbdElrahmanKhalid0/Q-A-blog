@@ -57,7 +57,6 @@ def ask():
         return redirect(url_for("login", next="ask"))
 
     cursor = get_db_cursor()
-    # TODO: make the expert not able to ask himself
     if request.method == 'POST':
         db = get_db()
         cursor.execute("INSERT INTO questions (ask_time, body, asker_username, asked_username) VALUES (%s, %s, %s, %s)",
@@ -69,7 +68,7 @@ def ask():
         flash("Your question has been submitted successfully, and soon you will be able to get the answer to it.", "success")
         return redirect(url_for("ask"))
 
-    cursor.execute("SELECT * FROM users Where role='expert'")
+    cursor.execute("SELECT * FROM users Where role='expert' and username!=%s", (session["username"],))
     experts = dictionarizeData(cursor.fetchall(), cursor.description)
 
 
