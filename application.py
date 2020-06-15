@@ -1,9 +1,10 @@
 from flask import Flask, render_template, g, request, redirect, flash, url_for, get_flashed_messages, session, abort
 from werkzeug.security import generate_password_hash, check_password_hash
-import os
 from utils import get_db, get_db_cursor, dictionarizeData
+from datetime import datetime
+import os
 
-
+DATE_FORMAT = '%Y-%m-%d, %H:%M:%S'
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 
@@ -32,9 +33,26 @@ def answer():
 
     return render_template("answer.html", title="Answer Questions")
 
-@app.route("/ask")
+@app.route("/ask", methods=['GET', 'POST'])
 def ask():
-    return render_template("ask.html", title="Ask Question")
+    cursor = get_db_cursor()
+    # TODO: make the expert not able to ask himself
+    if request.method == 'POST':
+        db = get_db()
+        cursor.execute("INSERT INTO questions (ask_time, body, asker_username, asked_username) VALUES (%s, %s, %s, %s)",
+         (datetime.strftime(datetime.now(),DATE_FORMAT),
+          request.form.get("answer"),
+          session["username"],
+          request.form.get("expert")))
+        db.commit()
+        flash("Your question has been submitted successfully, and soon you will be able to get the answer to it.", "success")
+        return redirect(url_for("ask"))
+
+    cursor.execute("SELECT * FROM users Where role='expert'")
+    experts = dictionarizeData(cursor.fetchall(), cursor.description)
+
+
+    return render_template("ask.html", title="Ask Question", experts = experts)
     
 @app.route("/login", methods=['GET','POST'])
 def login():
