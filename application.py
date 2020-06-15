@@ -19,7 +19,7 @@ def close_db(error):
 @app.route("/")
 def home():
     if 'username' not in session:
-        return redirect(url_for("login"))
+        return redirect(url_for("login", next="home"))
 
     cursor = get_db_cursor()
     cursor.execute("SELECT * FROM questions Where status='answered' ORDER BY ask_time DESC")
@@ -29,7 +29,7 @@ def home():
 @app.route("/answer", methods=['GET','POST'])
 def answer():
     if 'username' not in session:
-        return redirect(url_for("login"))
+        return redirect(url_for("login", next="answer"))
 
     if session['role'] != 'expert' and session['role'] != 'admin':
         abort(403)
@@ -52,7 +52,7 @@ def answer():
 @app.route("/ask", methods=['GET', 'POST'])
 def ask():
     if 'username' not in session:
-        return redirect(url_for("login"))
+        return redirect(url_for("login", next="ask"))
 
     cursor = get_db_cursor()
     # TODO: make the expert not able to ask himself
@@ -88,7 +88,13 @@ def login():
                 flash("You have logged in successfully!", "success")
                 session["username"] = user["username"]
                 session["role"] = user["role"]
-                return redirect(url_for("home"))
+                if request.args:
+                    if request.args.get("id"):
+                        return redirect(url_for(request.args.get("next"), id=request.args.get("id")))
+                    else:
+                        return redirect(url_for(request.args.get("next")))
+                else:
+                    return redirect(url_for("home"))
             else:
                 flash("You should check your input!!", "danger")
                 # in here I redirected the user to the same page to make the request method
@@ -103,7 +109,7 @@ def login():
 @app.route("/question/<int:id>")
 def question(id):
     if 'username' not in session:
-        return redirect(url_for("login"))
+        return redirect(url_for("login", next="question", id=id))
 
     cursor = get_db_cursor()
     cursor.execute("SELECT questions.body as question, answers.body as answer,\
@@ -142,7 +148,7 @@ def register():
 @app.route("/unanswered")
 def unanswered():
     if 'username' not in session:
-        return redirect(url_for("login"))
+        return redirect(url_for("login", next="unanswered"))
 
     cursor = get_db_cursor()
     cursor.execute("SELECT * FROM questions Where status='not answered'")
@@ -153,7 +159,7 @@ def unanswered():
 @app.route("/unanswered/answer/<int:id>", methods=['GET','POST'])
 def answer_unanswered(id):
     if 'username' not in session:
-        return redirect(url_for("login"))
+        return redirect(url_for("login", next="answer_unanswered", id=id))
     
     cursor = get_db_cursor()
     cursor.execute("SELECT * FROM questions WHERE id=%s and status='not answered'", (id,))
