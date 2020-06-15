@@ -1,4 +1,4 @@
-from flask import Flask, render_template, g
+from flask import Flask, render_template, g, request, redirect, flash, url_for, get_flashed_messages
 from mysql.connector import connect
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
@@ -11,7 +11,6 @@ def db_connect():
         host=os.environ.get("DB_HOST"),
         database=os.environ.get("DB_QABLOG")
     )
-    db.row_
     cursor = db.cursor()
     g.mysql_db = db
     g.mysql_cursor = cursor
@@ -35,6 +34,7 @@ def dictionarizeData(rows, columnsData):
 
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 
 @app.teardown_appcontext
 def close_db(error):
@@ -64,8 +64,22 @@ def login():
 def question():
     return render_template("question.html", title="Question")
 
-@app.route("/register")
+@app.route("/register", methods=['POST','GET'])
 def register():
+    if request.method == 'POST':
+        db = get_db()
+        cursor = get_db_cursor()
+        cursor.execute("SELECT * FROM users WHERE username=%s", (request.form.get("username"),))
+        user = cursor.fetchone()
+        if user:
+            flash("This username isn't available, Try choosing another one!", "danger")
+        else:
+            hashed_password = generate_password_hash(request.form.get("password"))
+            cursor.execute("INSERT INTO users (username, password) values (%s, %s)", (request.form.get("username"), hashed_password))
+            db.commit()
+            flash("You signed up successfully, You can login now", "success")
+            return redirect(url_for("login"))
+    
     return render_template("register.html", title="Register")
 
 @app.route("/unanswered")

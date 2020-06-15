@@ -35,6 +35,13 @@
         <!--/.nav-collapse -->
       </div>
     </nav>
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{category}}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endwith %}
 
     <div class="container theme-showcase" role="main">
       {% block content %}{% endblock %}

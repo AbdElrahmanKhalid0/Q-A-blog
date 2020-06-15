@@ -1,6 +1,6 @@
 CREATE TABLE users (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(50) NOT NULL,
+    username VARCHAR(22) NOT NULL,
     password VARCHAR(94) Not Null,
     role VARCHAR(10) DEFAULT 'user'
 );
@@ -14,6 +14,8 @@ CREATE TABLE questions (
     status VARCHAR(15) DEFAULT 'not answered',
     CONSTRAINT asker_fk FOREIGN KEY(asker_id) REFERENCES users(id),
     CONSTRAINT asked_fk FOREIGN KEY(asked_id) REFERENCES users(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
 );
 
 CREATE TABLE answers (
@@ -22,4 +24,6 @@ CREATE TABLE answers (
     answer_owner INT NOT NULL,
     CONSTRAINT question_fk FOREIGN KEY(question_id) REFERENCES questions(id),
     CONSTRAINT owner_fk FOREIGN KEY(answer_owner) REFERENCES users(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
 );
