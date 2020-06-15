@@ -12,13 +12,13 @@
             <div class="form-group">
               <label for="inputName" class="col-lg-2 control-label">Username</label>
               <div class="col-lg-10">
-                <input type="text" class="form-control" id="inputName" placeholder="Name" name="username">
+                <input type="text" class="form-control" id="inputName" placeholder="Name" name="username" maxlength="22" required pattern="^(?=[a-zA-Z0-9._]{8,22}$)(?!.*[_.]{2})[^_.].*[^_.]$" minlength="8">
               </div>
             </div>
             <div class="form-group">
               <label for="inputPassword" class="col-lg-2 control-label">Password</label>
               <div class="col-lg-10">
-                <input type="password" class="form-control" id="inputPassword" placeholder="Password" name="password">
+                <input type="password" class="form-control" id="inputPassword" placeholder="Password" name="password" required >
               </div>
             </div>
             <div class="form-group">
@@ -27,6 +27,9 @@
               </div>
             </div>
           </fieldset>
+          <p style="margin-bottom: 0; margin-left: 10px;">* the username should be between 8-22</p>
+          <p style="margin-bottom: 0; margin-left: 10px;">* the username can't contain <b>'_.' , '__', or '._'</b></p>
+          <p style="margin-bottom: 0; margin-left: 10px;">* the username can't contain <b>'_', or '.'</b> at the beginning</p>
         </form>
       </div>
     </div>
