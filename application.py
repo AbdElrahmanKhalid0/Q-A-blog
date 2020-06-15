@@ -1,4 +1,4 @@
-from flask import Flask, render_template, g, request, redirect, flash, url_for, get_flashed_messages
+from flask import Flask, render_template, g, request, redirect, flash, url_for, get_flashed_messages, session
 from mysql.connector import connect
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
@@ -48,7 +48,11 @@ def close_db(error):
 # routes
 @app.route("/")
 def home():
-    return render_template("home.html", title="Home")
+    db = get_db()
+    cursor = get_db_cursor()
+    cursor.execute("SELECT * FROM questions Where status='answered'")
+    questions = dictionarizeData(cursor.fetchall(), cursor.description)
+    return render_template("home.html", title="Home", questions=questions)
 
 @app.route("/answer")
 def answer():
@@ -69,6 +73,7 @@ def login():
             user = dictionarizeData(user, cursor.description, True)
             if check_password_hash(user["password"], request.form.get("password")):
                 flash("You have logged in successfully!", "success")
+                session["username"] = user["username"]
                 return redirect(url_for("home"))
             else:
                 flash("You should check your input!!", "danger")
@@ -111,7 +116,12 @@ def unanswered():
 def users():
     return render_template("users.html", title="User Setup")
 
-
+@app.route("/logout")
+def logout():
+    if "username" in session:
+        session.pop("username", None)
+        
+    return redirect(url_for("login"))
 
 if __name__ == "__main__":
     app.run(debug=True)
