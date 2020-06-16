@@ -5,7 +5,7 @@ CREATE TABLE users (
 );
 
 CREATE TABLE questions (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id SERIAL PRIMARY KEY,
     ask_time DATE NOT NULL,
     body VARCHAR(200) NOT NULL,
     asker_username VARCHAR(22) NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE questions (
 );
 
 CREATE TABLE answers (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id SERIAL PRIMARY KEY,
     body VARCHAR(200) NOT NULL,
     question_id INT NOT NULL,
     answer_owner VARCHAR(22) NOT NULL,
