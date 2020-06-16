@@ -1,6 +1,6 @@
 from flask import Flask, render_template, g, request, redirect, flash, url_for, get_flashed_messages, session, abort, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from utils import get_db, get_db_cursor, dictionarizeData
+from utils import get_db, get_db_cursor
 from datetime import datetime
 import os
 
@@ -25,7 +25,7 @@ def home():
     # in here ordered by the id instead of the date because the date won't be accurate
     # in case that the day has many questions
     cursor.execute("SELECT * FROM questions Where status='answered' ORDER BY id DESC")
-    questions = dictionarizeData(cursor.fetchall(), cursor.description)
+    questions = cursor.fetchall()
     return render_template("home.html", title="Home", questions=questions)
 
 @app.route("/answer", methods=['GET','POST'])
@@ -47,7 +47,7 @@ def answer():
         return redirect(url_for('answer'))
         
     cursor.execute("SELECT * FROM questions WHERE status='not answered' and asked_username=%s",(session["username"],))
-    questions = dictionarizeData(cursor.fetchall(), cursor.description)
+    questions = cursor.fetchall()
 
     return render_template("answer.html", title="Answer Questions", questions=questions)
 
@@ -69,7 +69,7 @@ def ask():
         return redirect(url_for("ask"))
 
     cursor.execute("SELECT * FROM users Where role='expert' and username!=%s", (session["username"],))
-    experts = dictionarizeData(cursor.fetchall(), cursor.description)
+    experts = cursor.fetchall()
 
 
     return render_template("ask.html", title="Ask Question", experts = experts)
@@ -84,7 +84,6 @@ def login():
         cursor.execute("SELECT * FROM users WHERE username=%s", (request.form.get("username"),))
         user = cursor.fetchone()
         if user:
-            user = dictionarizeData(user, cursor.description, True)
             if check_password_hash(user["password"], request.form.get("password")):
                 flash("You have logged in successfully!", "success")
                 session["username"] = user["username"]
@@ -109,7 +108,6 @@ def login():
 
 @app.route("/question/<int:id>")
 def question(id):
-    # TODO: make the question show the comments from other users in its answered page
     if 'username' not in session:
         return redirect(url_for("login", next="question", id=id))
 
@@ -117,11 +115,13 @@ def question(id):
     cursor.execute("SELECT questions.body as question, answers.body as answer,\
                     questions.asker_username as asker, questions.asked_username as asked,\
                     questions.status as status FROM questions JOIN answers\
-                    ON questions.id = answers.question_id WHERE questions.id = %s",(id,))
+                    ON questions.id = answers.question_id WHERE questions.id = %s and answers.answer_owner = questions.asked_username",(id,))
     question = cursor.fetchone()
     if question:
-        question = dictionarizeData(question, cursor.description, True)
-        return render_template("question.html", title="Question", question=question)
+        cursor.execute("SELECT answer_owner, body as answer FROM answers WHERE question_id = %s and answer_owner != %s", (id,question["asked"]))
+        answers = cursor.fetchall()
+        
+        return render_template("question.html", title="Question", question=question, answers=enumerate(answers) if answers else None)
     
     flash("There is no question in here!!", "info")
     return redirect(url_for("home"))
@@ -154,7 +154,7 @@ def unanswered():
 
     cursor = get_db_cursor()
     cursor.execute("SELECT * FROM questions Where status='not answered'")
-    questions = dictionarizeData(cursor.fetchall(), cursor.description)
+    questions = cursor.fetchall()
 
     return render_template("unanswered.html", title="Unanswered", questions=questions)
 
@@ -166,9 +166,8 @@ def answer_unanswered(id):
     cursor = get_db_cursor()
     cursor.execute("SELECT * FROM questions WHERE id=%s and status='not answered'", (id,))
     question = cursor.fetchone()
-    if question:
-        question = dictionarizeData(question, cursor.description, True)
-    else:
+    
+    if not question:
         flash("There is no an unanswered question with this id!", "info")
         return redirect(url_for('unanswered'))
 
@@ -189,9 +188,7 @@ def answer_unanswered(id):
     else:
         cursor.execute("SELECT answer_owner, body as answer FROM answers WHERE question_id = %s", (id,))
         answers = cursor.fetchall()
-        if answers:
-            answers = dictionarizeData(answers, cursor.description)
-        print(answers)
+
         return render_template("answer_unanswered.html", question=question, answers=enumerate(answers) if answers else None)
 
 
@@ -212,7 +209,7 @@ def users():
         return jsonify({'success':'true'})
 
     cursor.execute("SELECT * FROM users")    
-    users = dictionarizeData(cursor.fetchall(), cursor.description)
+    users = cursor.fetchall()
 
     return render_template("users.html", title="User Setup", users=users)
 

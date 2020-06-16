@@ -10,7 +10,7 @@ def db_connect():
         host=os.environ.get("DB_HOST"),
         database=os.environ.get("DB_QABLOG")
     )
-    cursor = db.cursor()
+    cursor = db.cursor(buffered=True, dictionary=True)
     g.mysql_db = db
     g.mysql_cursor = cursor
 

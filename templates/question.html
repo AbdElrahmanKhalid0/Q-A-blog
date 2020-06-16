@@ -7,4 +7,13 @@
         <p><a class="btn btn-primary btn-lg">Asked By: {{ question.asker }}</a></p>
         <p><a class="btn btn-primary btn-lg">Answered By: {{ question.asked }}</a></p>
       </div>
+      {% if answers %}
+        <div class="answers">
+            {% for num, answer in answers %}
+                <div class="answer">
+                    <p>{{num+1}}: {{answer.answer_owner}}: <b>{{answer.answer}}</b></p>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 {% endblock %}
