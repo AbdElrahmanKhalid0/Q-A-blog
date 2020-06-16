@@ -22,9 +22,7 @@ def home():
         return redirect(url_for("login", next="home"))
 
     cursor = get_db_cursor()
-    # in here ordered by the id instead of the date because the date won't be accurate
-    # in case that the day has many questions
-    cursor.execute("SELECT * FROM questions Where status='answered' ORDER BY id DESC")
+    cursor.execute("SELECT * FROM questions Where status='answered' ORDER BY ask_time DESC, id DESC")
     questions = cursor.fetchall()
     return render_template("home.html", title="Home", questions=questions)
 
@@ -114,7 +112,7 @@ def question(id):
     cursor = get_db_cursor()
     cursor.execute("SELECT questions.body as question, answers.body as answer,\
                     questions.asker_username as asker, questions.asked_username as asked,\
-                    questions.status as status FROM questions JOIN answers\
+                    questions.status as status, questions.ask_time as time FROM questions JOIN answers\
                     ON questions.id = answers.question_id WHERE questions.id = %s and answers.answer_owner = questions.asked_username",(id,))
     question = cursor.fetchone()
     if question:
