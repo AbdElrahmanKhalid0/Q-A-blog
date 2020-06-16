@@ -219,5 +219,16 @@ def logout():
         
     return redirect(url_for("login"))
 
+
+# error pages
+@app.errorhandler(404)
+def error_404(error):
+    return render_template("error.html", error_title="Page Not Found", error=error)
+
+@app.errorhandler(403)
+def error_404(error):
+    return render_template("error.html", error_title="Permission Error", error=error)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
