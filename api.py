@@ -7,26 +7,9 @@ from functools import wraps
 api = Blueprint('api', __name__)
 DATE_FORMAT = '%Y-%m-%d'
 
-def authentication_required(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if not request.authorization:
-            return jsonify({"error":"Authentication Error"}), 403
-        
-        cursor = get_db_cursor()
-        cursor.execute("SELECT * FROM users WHERE username = %s", (request.authorization.username, ))
-        user = cursor.fetchone()
-        if not user or not check_password_hash(user["password"], request.authorization.password):
-            return jsonify({"error":"Authentication Error"}), 403
-        return func(*args, **kwargs)
-    return wrapper
-
-
-# this didn't work because in every time the endpoint function name was wrapper and that shouldn't 
-# happen
-
 # def authentication_required(func):
-#     def wrapper(*args,**kwargs):
+#     @wraps(func)
+#     def wrapper(*args, **kwargs):
 #         if not request.authorization:
 #             return jsonify({"error":"Authentication Error"}), 403
         
@@ -37,6 +20,25 @@ def authentication_required(func):
 #             return jsonify({"error":"Authentication Error"}), 403
 #         return func(*args, **kwargs)
 #     return wrapper
+
+
+# this didn't work before changing the __name__ of the returned function because in every time the
+# decorator wraps a function the endpoint name will be wrapper and that makes all the endpoints
+# have the same name and that shouldn't happen
+
+def authentication_required(func):
+    def wrapper(*args, **kwargs):
+        if not request.authorization:
+            return jsonify({"error":"Authentication Error"}), 403
+        
+        cursor = get_db_cursor()
+        cursor.execute("SELECT * FROM users WHERE username = %s", (request.authorization.username, ))
+        user = cursor.fetchone()
+        if not user or not check_password_hash(user["password"], request.authorization.password):
+            return jsonify({"error":"Authentication Error"}), 403
+        return func(*args, **kwargs)
+    wrapper.__name__ = func.__name__
+    return wrapper
 
 
 @api.route("/")
@@ -50,7 +52,7 @@ def index():
     in base64 encode so it should be for example in javascript like this:
     <pre><b>'Basic ' + base64.encode(username + ":" + password)</b></pre>
     or
-    <pre><b>'Basic ' + atob(username + ":" + password)</b></pre>
+    <pre><b>'Basic ' + btoa(username + ":" + password)</b></pre>
 
     The following endpoints are available:
     GET /questions
