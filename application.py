@@ -1,12 +1,15 @@
 from flask import Flask, render_template, g, request, redirect, flash, url_for, get_flashed_messages, session, abort, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from utils import get_db, get_db_cursor
+from api import api
 from datetime import datetime
 import os
 
 DATE_FORMAT = '%Y-%m-%d'
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+app.config["SERVER_NAME"] = os.environ.get("SERVER_NAME")
+app.register_blueprint(api, subdomain='api')
 
 @app.teardown_appcontext
 def close_db(error):
@@ -59,7 +62,7 @@ def ask():
         db = get_db()
         cursor.execute("INSERT INTO questions (ask_time, body, asker_username, asked_username) VALUES (%s, %s, %s, %s)",
          (datetime.strftime(datetime.now(),DATE_FORMAT),
-          request.form.get("answer"),
+          request.form.get("question"),
           session["username"],
           request.form.get("expert")))
         db.commit()

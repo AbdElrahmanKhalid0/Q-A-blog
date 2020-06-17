@@ -5,7 +5,7 @@ from psycopg2.extras import DictCursor
 import os
 
 # database connection funcitons
-def db_connect():
+def db_connect(isDict):
     # db = connect(
     #     username=os.environ.get("DB_USERNAME"),
     #     password=os.environ.get("DB_PASSWORD"),
@@ -13,19 +13,22 @@ def db_connect():
     #     database=os.environ.get("DB_QABLOG")
     # )
     # cursor = db.cursor(buffered=True, dictionary=True)
-    db = connect(os.environ.get("DATABASE_URL"), cursor_factory=DictCursor)
+    if isDict:
+        db = connect(os.environ.get("DATABASE_URL"), cursor_factory=DictCursor)
+    else:
+        db = connect(os.environ.get("DATABASE_URL"))
     cursor = db.cursor()
     g.mysql_db = db
     g.mysql_cursor = cursor
 
-def get_db():
+def get_db(isDict=True):
     if not hasattr(g, 'mysql_db'):
-        db_connect()
+        db_connect(isDict)
     return g.mysql_db
 
-def get_db_cursor():
+def get_db_cursor(isDict=True):
     if not hasattr(g, 'mysql_cursor'):
-        db_connect()
+        db_connect(isDict)
     return g.mysql_cursor
 
 def dictionarizeData(data, columnsData, oneRow=False):
